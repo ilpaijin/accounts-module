@@ -1,4 +1,4 @@
 accounts-module
 ===============
 
-Accounts source files, module (modulejs) and coffeescript
+Source files, module (modulejs), Grunt, Coffeescript and Jasmine
