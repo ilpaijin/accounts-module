@@ -1,5 +1,5 @@
 (function() {
-  var Q, root, _ref;
+  var Q, root, _ref, _ref1;
 
   root = this;
 
@@ -21,6 +21,13 @@
       return this;
     }
   }.initPaths();
+
+  Q.Accounts = {
+    Instances: {},
+    paths: {
+      api: location.origin + '/qoffice/api/accounts/'
+    }
+  };
 
   modulejs.define('Q', function() {
     return Q;
@@ -57,9 +64,7 @@
         'nome': '',
         'cognome': '',
         'datacreazione': '',
-        'accounts': {
-          'ragione': ''
-        },
+        'accounts': false,
         'callcenter': [],
         'indirizzo': '',
         'comune': '',
@@ -926,26 +931,31 @@
             aNewData = [
               {
                 'mData': function(data, objs) {
-                  var agente, agenzia, menuaddition, nascosto, nascosto_class, nascosto_label, nascosto_value, poker, utente;
+                  var agente, agenzia, menuaddition, nascosto, nascosto_class, nascosto_label, nascosto_value, poker, reg;
                   menuaddition = '';
-                  if (Q.paths.realm === "developer" || Q.paths.realm === 'amministrazione') {
-                    agente = data.accounts.tipoutente === 'Agente' ? 'active" style="opacity:0.2"' : '"';
-                    agenzia = data.accounts.tipoutente === 'Agenzia' ? 'active" style="opacity:0.2"' : '"';
-                    utente = data.accounts.tipoutente === 'Utente' ? 'active" style="opacity:0.2"' : '"';
-                    poker = data.accounts.tipoutente === 'Poker' ? 'active" style="opacity:0.2"' : '"';
-                    if (data.accounts.nascosto === 'si') {
-                      nascosto_class = 'active" style="opacity:0.3"';
-                      nascosto_label = 'nascosto';
-                      nascosto_value = 'no';
-                    } else {
-                      nascosto_class = '"';
-                      nascosto_label = 'nascondi';
-                      nascosto_value = 'si';
-                    }
-                    nascosto = data.accounts.nascosto === 'si' ? '<span class=>nascosto</span>' : '<span>nascondi</span>';
-                    menuaddition = ' <a target="_blank" class="btn btn-mini btn-turgu ' + agente + ' href="' + (Q.Accounts.paths.api + 'tipoaccount/Agente/' + data.idutente) + '">Agente</a> ' + ' <a target="_blank" class="btn btn-mini btn-orange ' + agenzia + ' href="' + Q.Accounts.paths.api + 'tipoaccount/Agenzia/' + data.idutente + '">Agenzia</a> ' + ' <a target="_blank" class="btn btn-mini btn-black ' + utente + ' href="' + Q.Accounts.paths.api + 'tipoaccount/Utente/' + data.idutente + '">Utente</a> ' + ' <a target="_blank" class="btn btn-mini btn-boo ' + poker + ' href="' + Q.Accounts.paths.api + 'tipoaccount/Poker/' + data.idutente + '">Poker</a> ' + '<a target="_blank" class="btn btn-mini btn-red ' + nascosto_class + ' href="' + Q.Accounts.paths.api + 'nascosto/' + nascosto_value + '/' + data.idutente + '">' + nascosto_label + '</a>';
+                  reg = '';
+                  if (!data.accounts) {
+                    reg = "<span class='fontello-icon-attention' style='padding-left:5px;'>isol</span>";
                   }
-                  return '<a class="btn btn-mini btn-yellow aprischeda" rel="' + (typeof data.uid !== 'undefined' ? data.uid : data.ragione) + '" href="#' + data.uid + '"><i class="fontello-icon-accounts-scheda"></i>Vedi</a>' + menuaddition;
+                  if (Q.paths.realm === "developer" || Q.paths.realm === 'amministrazione') {
+                    if (data.accounts) {
+                      agente = data.accounts.tipoutente === 'Agente' ? 'active" style="opacity:0.2"' : '"';
+                      agenzia = data.accounts.tipoutente === 'Agenzia' ? 'active" style="opacity:0.2"' : '"';
+                      poker = data.accounts.tipoutente === 'Poker' ? 'active" style="opacity:0.2"' : '"';
+                      if (data.accounts.nascosto === 'si') {
+                        nascosto_class = 'active" style="opacity:0.3"';
+                        nascosto_label = 'nascosto';
+                        nascosto_value = 'no';
+                      } else {
+                        nascosto_class = '"';
+                        nascosto_label = 'nascondi';
+                        nascosto_value = 'si';
+                      }
+                      nascosto = data.accounts.nascosto === 'si' ? '<span class=>nascosto</span>' : '<span>nascondi</span>';
+                      menuaddition = ' <a target="_blank" class="btn btn-mini btn-turgu ' + agente + ' href="' + (Q.Accounts.paths.api + 'tipoaccount/Agente/' + data.idutente) + '">Agente</a> ' + ' <a target="_blank" class="btn btn-mini btn-orange ' + agenzia + ' href="' + Q.Accounts.paths.api + 'tipoaccount/Agenzia/' + data.idutente + '">Agenzia</a> ' + ' <a target="_blank" class="btn btn-mini btn-boo ' + poker + ' href="' + Q.Accounts.paths.api + 'tipoaccount/Poker/' + data.idutente + '">Poker</a> ' + '<a target="_blank" class="btn btn-mini btn-red ' + nascosto_class + ' href="' + Q.Accounts.paths.api + 'nascosto/' + nascosto_value + '/' + data.idutente + '">' + nascosto_label + '</a>';
+                    }
+                  }
+                  return '<a class="btn btn-mini btn-yellow aprischeda" rel="' + (typeof data.uid !== 'undefined' ? data.uid : data.ragione) + '" href="#' + data.uid + '"><i class="fontello-icon-accounts-scheda"></i>Vedi</a>' + reg + menuaddition;
                 }
               }, {
                 'mData': function(data) {
@@ -961,7 +971,11 @@
                 }
               }, {
                 'mData': function(data) {
-                  return data.accounts.ragione;
+                  if (data.accounts && data.accounts.ragione !== 'undefined') {
+                    return data.accounts.ragione;
+                  } else {
+                    return '';
+                  }
                 }
               }, {
                 'mData': function(data) {
@@ -973,7 +987,7 @@
                 }
               }, {
                 'mData': function(data) {
-                  if (typeof data.accounts.comune !== 'undefined') {
+                  if (data.accounts && data.accounts.comune !== '') {
                     return data.accounts.comune;
                   } else {
                     return data.citta;
@@ -981,7 +995,7 @@
                 }
               }, {
                 'mData': function(data) {
-                  if (typeof data.accounts.provincia !== 'undefined') {
+                  if (data.accounts && data.accounts.provincia !== '') {
                     return data.accounts.provincia;
                   } else {
                     return data.provincia;
@@ -989,7 +1003,7 @@
                 }
               }, {
                 'mData': function(data) {
-                  if (typeof data.accounts.regione !== 'undefined') {
+                  if (data.accounts && data.accounts.regione !== '') {
                     return data.accounts.regione;
                   } else {
                     return data.regione;
@@ -997,7 +1011,11 @@
                 }
               }, {
                 'mData': function(data) {
-                  return data.accounts.qshop;
+                  if (data.accounts && data.accounts.qshop !== '') {
+                    return data.accounts.qshop;
+                  } else {
+                    return '';
+                  }
                 }
               }
             ];
@@ -1519,6 +1537,270 @@
     });
   });
 
+  modulejs.define('ViewUtenti', ['Q', 'jquery', 'Backbone', 'ViewSchedaEdit', 'ViewTabMenuSchede'], function(Q, $, Backbone, ViewSchedaEdit, ViewTabMenuSchede) {
+    var ViewAccounts;
+    return ViewAccounts = Backbone.View.extend({
+      events: {
+        'click .aprischeda': 'openAccountTabScheda'
+      },
+      initialize: function() {
+        _.bindAll(this, 'render', 'addMapButton', 'mapView', 'renderInMap');
+        this.renderDataTable();
+        this.TabMenu = new ViewTabMenuSchede({
+          collection: this.collection
+        });
+      },
+      render: function() {
+        this.renderDataTable();
+        return this;
+      },
+      renderDataTable: function() {
+        var self;
+        self = this;
+        this.OdataTable = $(this.el).dataTable({
+          aLengthMenu: [[20, 50, 100, -1], [20, 50, 100, "All"]],
+          iDisplayLength: 20,
+          bProcessing: true,
+          bServerSide: true,
+          sAjaxSource: "/qoffice/api/accounts/dataTable/utenti",
+          bDeferRender: false,
+          bRetrieve: true,
+          bIgnoreEmpty: false,
+          oColumnFilterWidgets: {
+            "aiExclude": [1]
+          },
+          aoColumns: (function() {
+            var aNewData;
+            aNewData = [
+              {
+                'mData': function(data, objs) {
+                  var menuaddition, nascosto, nascosto_class, nascosto_label, nascosto_value, reg;
+                  reg = '';
+                  menuaddition = '';
+                  if (!data.accounts) {
+                    reg = "<span class='fontello-icon-attention' style='padding-left:5px;'>isol</span>";
+                  }
+                  if (Q.paths.realm === "developer" || Q.paths.realm === 'amministrazione') {
+                    if (data.accounts) {
+                      if (data.accounts.nascosto === 'si') {
+                        nascosto_class = 'active" style="opacity:0.3"';
+                        nascosto_label = 'nascosto';
+                        nascosto_value = 'no';
+                      } else {
+                        nascosto_class = '"';
+                        nascosto_label = 'nascondi';
+                        nascosto_value = 'si';
+                      }
+                      nascosto = data.accounts.nascosto === 'si' ? '<span class=>nascosto</span>' : '<span>nascondi</span>';
+                      if (data.accounts.tipoutente !== "Utente") {
+                        menuaddition = '<a target="_blank" class="btn btn-mini btn-red ' + nascosto_class + ' href="' + Q.Accounts.paths.api + 'nascosto/' + nascosto_value + '/' + data.idutente + '">' + nascosto_label + '</a>';
+                      }
+                    }
+                  }
+                  return '<a class="btn btn-mini btn-yellow aprischeda" rel="' + (typeof data.uid !== 'undefined' ? data.uid : data.ragione) + '" href="#' + data.uid + '"><i class="fontello-icon-accounts-scheda"></i>Vedi</a>' + reg + menuaddition;
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.idutente) {
+                    return data.idutente;
+                  } else {
+                    return '';
+                  }
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.uid) {
+                    return data.uid;
+                  } else {
+                    return '';
+                  }
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.padre && data.padre.uid) {
+                    return data.padre.uid;
+                  } else {
+                    return '';
+                  }
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.nome) {
+                    return data.nome;
+                  } else {
+                    return '';
+                  }
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.cognome) {
+                    return data.cognome;
+                  } else {
+                    return '';
+                  }
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.accounts && data.accounts.comune !== '') {
+                    return data.accounts.comune;
+                  } else {
+                    return data.citta;
+                  }
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.accounts && data.accounts.provincia !== '') {
+                    return data.accounts.provincia;
+                  } else {
+                    return data.provincia;
+                  }
+                }
+              }, {
+                'mData': function(data) {
+                  if (data.accounts && data.accounts.regione !== '') {
+                    return data.accounts.regione;
+                  } else {
+                    return data.regione;
+                  }
+                }
+              }
+            ];
+            return aNewData;
+          })(),
+          sColumns: "Scheda,Idutente,Uid",
+          oLanguage: {
+            sInfoEmpty: "0 record trovati",
+            sInfoFiltered: "",
+            sInfo: "Visualizzi da _START_ a _END_ di _TOTAL_ totali",
+            sSearch: "Global search: ",
+            sLengthMenu: "Mostra _MENU_ risultati",
+            sZeroRecords: 'Nessun record trovato'
+          },
+          bSortCellsTop: true,
+          aaSorting: [[2, 'asc']],
+          sDom: "<'row-fluid' <'widget-header' <'span4'l> <'span8'<'table-tool-wrapper'><'table-tool-container'>> > > rti <'row-fluid' <'widget-footer' <'span6' <'table-action-wrapper'>> <'span6'p> >>",
+          fnDrawCallback: function(oSettings) {}
+        }).columnFilter({
+          sPlaceHolder: 'head:after'
+        });
+        return this.addMapButton();
+      },
+      renderInMap: function(oSettings) {
+        var i, model, _i, _len, _ref;
+        if (this.OdataTable) {
+          this.collection.forEach(function(model, index) {
+            model.set('visibleInMaps', false);
+          });
+          _ref = oSettings.aiDisplay;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            i = _ref[_i];
+            model = this.OdataTable.fnGetData(i);
+            model = this.collection.get(model.uid);
+            model.set({
+              'visibleInMaps': true
+            });
+          }
+          this.mapView();
+        }
+      },
+      updateDataTable: function() {
+        this.OdataTable.fnSettings().aaData = this.collection.toJSON();
+        this.OdataTable.fnReloadAjax(this.OdataTable.fnSettings());
+      },
+      openAccountTabScheda: function(e, tab) {
+        var el, id, instance;
+        if (e.currentTarget) {
+          el = id = $(e.currentTarget).attr('href').slice(1);
+        } else {
+          id = e;
+        }
+        instance = 'tabScheda-' + id;
+        if (Q.Accounts.Instances[instance] != null) {
+          Q.Accounts.Instances[instance].view.setActive();
+          return;
+        }
+        Q.Accounts.Instances[instance] = {
+          view: new ViewSchedaEdit({
+            el: '#' + instance,
+            uid: id,
+            viewAccounts: this,
+            collection: this.collection,
+            tabActive: tab
+          })
+        };
+      },
+      addMapButton: function() {
+        var self;
+        self = this;
+        $('#lista-' + Q.paths.currentpage + '_wrapper .table-action-wrapper').html('<a href="#tabMappa" data-toggle="tab" class="btn aprilistainmappa"><i class="fontello-icon-map"></i>Apri nella mappa</a>').find('.aprilistainmappa').on('click', function(e) {
+          $($(this).attr('href')).fadeIn();
+          self.mapView();
+          return $('body').delegate('.apri-scheda-da-mappa', 'click', function(e) {
+            e.preventDefault();
+            return self.openAccountTabScheda(e);
+          });
+        });
+      },
+      mapView: function() {
+        var a, dataset, el, imagemarker, map, mapOptions, marker, _i, _len;
+        el = document.getElementById("map-canvas-" + Q.paths.currentpage);
+        mapOptions = {
+          center: new google.maps.LatLng(41.871, 12.567),
+          zoom: 6,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        map = new google.maps.Map(el, mapOptions);
+        dataset = this.collection.filter(function(i) {
+          return i.get('visibleInMaps') === true && i.get('latlng').idref !== '';
+        });
+        $('.mappa-accounts-valid span').html(dataset.length);
+        for (_i = 0, _len = dataset.length; _i < _len; _i++) {
+          a = dataset[_i];
+          if ('' !== a.get('latlng').idref) {
+            imagemarker = a.get('accounts').qshop === 'si' ? 'qshop' : Q.paths.currentpage;
+            marker = new google.maps.Marker({
+              position: new google.maps.LatLng(a.get('latlng').lat, a.get('latlng').lng),
+              map: map,
+              icon: Q.paths.assets + 'q-marker-' + imagemarker + '.png',
+              title: a.get('accounts').ragione,
+              clickable: true
+            });
+          }
+          marker.info = new google.maps.InfoWindow({
+            content: '<div><h4>' + a.get('accounts').ragione + '</h4><p><small>Riferimento: </small><strong>' + a.get('nome') + ' ' + a.get('cognome') + '</strong></p><p><small>Master: </small>' + a.get('master') + '</p><p><a href="mailto:' + a.get('email') + '">' + a.get('email') + '</a></p></div>' + '<p><a class="apri-scheda-da-mappa" rel="' + a.get('uid') + '" href="#' + a.get('uid') + '">Apri scheda</a></p>' + '</div>'
+          });
+          google.maps.event.addListener(marker, 'click', function() {
+            return this.info.open(map, this);
+          });
+          marker.setMap(map);
+        }
+        return window.scrollTo(0, ($('#tabMappa').position().top) - 80);
+      }
+    });
+  });
+
+  modulejs.define('initUtenti', ['Q', 'CollectionAccounts', 'ViewUtenti', 'ViewSchedaEdit'], function(Q, CollectionAccounts, ViewUtenti, ViewSchedaEdit) {
+    var Router, router, viewAccounts;
+    ViewSchedaEdit.prototype.partials = ['Scheda', 'Isolutions', 'Callcenter', 'Qpoints'];
+    viewAccounts = new ViewUtenti({
+      el: '#lista-' + Q.paths.currentpage,
+      dataTableColumns: ['uid', 'idutente', 'padre', 'nome', 'cognome', 'comune', 'provincia', 'regione']
+    });
+    Router = Backbone.Router.extend({
+      initialize: function() {
+        this.route(/(.+)/, "schedaAccount");
+        this.route(/^tab-(.+)$/, "tabAccount");
+        return this;
+      },
+      schedaAccount: function(r) {},
+      tabAccount: function(r) {
+        return r = r.split('-');
+      }
+    });
+    router = new Router;
+    return Backbone.history.start();
+  });
+
   modulejs.define('initAccounts', ['Q', 'CollectionAccounts', 'ViewAccounts', 'ViewSchedaEdit'], function(Q, CollectionAccounts, ViewAccounts, ViewSchedaEdit) {
     var Router, collectionAccounts, router, viewAccounts;
     collectionAccounts = new CollectionAccounts();
@@ -1565,15 +1847,10 @@
     });
   });
 
-  Q.Accounts = {
-    Instances: {},
-    paths: {
-      api: location.origin + '/qoffice/api/accounts/'
-    }
-  };
-
-  if ((_ref = Q.paths.currentpage) === 'agenzie' || _ref === 'agenti' || _ref === 'poker' || _ref === 'utenti') {
+  if ((_ref = Q.paths.currentpage) === 'agenzie' || _ref === 'agenti' || _ref === 'poker') {
     modulejs.require('initAccounts');
+  } else if ((_ref1 = Q.paths.currentpage) === 'utenti') {
+    modulejs.require('initUtenti');
   } else {
     modulejs.require('initFoglinotizia');
   }

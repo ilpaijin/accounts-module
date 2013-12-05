@@ -6,8 +6,7 @@ modulejs.define 'ModelAccounts', ['Backbone'], (Backbone) ->
             'nome': ''
             'cognome': ''
             'datacreazione': ''
-            'accounts': 
-              'ragione': ''
+            'accounts': false
             'callcenter': []
             'indirizzo': ''
             'comune': ''

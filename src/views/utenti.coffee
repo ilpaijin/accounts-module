@@ -1,4 +1,4 @@
-modulejs.define 'ViewAccounts', [
+modulejs.define 'ViewUtenti', [
     'Q'
     'jquery'
     'Backbone'
@@ -12,7 +12,9 @@ modulejs.define 'ViewAccounts', [
 
         initialize: ->
             _.bindAll @, 'render', 'addMapButton', 'mapView', 'renderInMap'
-            @.listenTo @.collection, "reset" : -> @.renderDataTable()
+            # @.listenTo @.collection, "reset" : -> @.renderDataTable()
+
+            @.renderDataTable()
 
             @.TabMenu = new ViewTabMenuSchede({collection: @.collection})
 
@@ -27,7 +29,10 @@ modulejs.define 'ViewAccounts', [
             @.OdataTable = $(@.el).dataTable
                 aLengthMenu: [[20, 50, 100, -1], [20, 50, 100, "All"]]
                 iDisplayLength: 20
-                aaData: @.collection.toJSON()
+                bProcessing: true,
+                bServerSide: true,
+                sAjaxSource: "/qoffice/api/accounts/dataTable/utenti"
+                # aaData: @.collection.toJSON()
                 bDeferRender: false
                 bRetrieve: true
                 bIgnoreEmpty: false
@@ -36,20 +41,14 @@ modulejs.define 'ViewAccounts', [
                 aoColumns: do ->
                     aNewData = [
                         {'mData': (data, objs) ->
-                            menuaddition = ''
                             reg = ''
+                            menuaddition = ''
 
                             if not data.accounts
                                 reg = "<span class='fontello-icon-attention' style='padding-left:5px;'>isol</span>"
 
                             if Q.paths.realm is "developer" or Q.paths.realm is 'amministrazione'
-
                                 if data.accounts
-
-                                    agente = if data.accounts.tipoutente is 'Agente' then 'active" style="opacity:0.2"' else '"'
-                                    agenzia = if data.accounts.tipoutente is 'Agenzia' then 'active" style="opacity:0.2"' else '"'
-                                    poker = if data.accounts.tipoutente is 'Poker' then 'active" style="opacity:0.2"' else '"'
-
                                     if data.accounts.nascosto is 'si'
                                         nascosto_class = 'active" style="opacity:0.3"'
                                         nascosto_label = 'nascosto'
@@ -61,25 +60,25 @@ modulejs.define 'ViewAccounts', [
 
                                     nascosto = if data.accounts.nascosto is 'si' then '<span class=>nascosto</span>' else '<span>nascondi</span>'
                                     
-                                    menuaddition = ' <a target="_blank" class="btn btn-mini btn-turgu ' + agente + ' href="' + (Q.Accounts.paths.api + 'tipoaccount/Agente/' + data.idutente) + '">Agente</a> ' + ' <a target="_blank" class="btn btn-mini btn-orange ' + agenzia + ' href="' + Q.Accounts.paths.api + 'tipoaccount/Agenzia/' + data.idutente + '">Agenzia</a> ' + ' <a target="_blank" class="btn btn-mini btn-boo ' + poker + ' href="' + Q.Accounts.paths.api + 'tipoaccount/Poker/' + data.idutente + '">Poker</a> ' + '<a target="_blank" class="btn btn-mini btn-red ' + nascosto_class + ' href="' + Q.Accounts.paths.api + 'nascosto/' + nascosto_value + '/' + data.idutente + '">' + nascosto_label + '</a>'
+                                    if data.accounts.tipoutente isnt "Utente"        
+                                        menuaddition = '<a target="_blank" class="btn btn-mini btn-red ' + nascosto_class + ' href="' + Q.Accounts.paths.api + 'nascosto/' + nascosto_value + '/' + data.idutente + '">' + nascosto_label + '</a>'
                                 
                             '<a class="btn btn-mini btn-yellow aprischeda" rel="' + (if typeof data.uid isnt 'undefined' then data.uid else data.ragione) + '" href="#' + data.uid + '"><i class="fontello-icon-accounts-scheda"></i>Vedi</a>' + reg + menuaddition
                             },
-                        {'mData': (data) -> data.idutente },
-                        {'mData': (data) -> data.uid },
-                        {'mData': (data) -> data.padre.uid},
-                        {'mData': (data) -> if data.accounts and data.accounts.ragione isnt 'undefined' then data.accounts.ragione else ''},
-                        {'mData': (data) -> data.nome},
-                        {'mData': (data) -> data.cognome },
+                        {'mData': (data) -> if data.idutente then data.idutente else '' },
+                        {'mData': (data) -> if data.uid then data.uid else '' },
+                        {'mData': (data) -> if data.padre and data.padre.uid then data.padre.uid else ''},
+                        {'mData': (data) -> if data.nome then data.nome else ''},
+                        {'mData': (data) -> if data.cognome then data.cognome else '' },
                         {'mData': (data) -> if data.accounts and data.accounts.comune isnt '' then data.accounts.comune else data.citta},
                         {'mData': (data) -> if data.accounts and data.accounts.provincia isnt '' then data.accounts.provincia else data.provincia},
                         {'mData': (data) -> if data.accounts and data.accounts.regione isnt '' then data.accounts.regione else data.regione},
-                        {'mData': (data) -> if data.accounts and data.accounts.qshop isnt '' then data.accounts.qshop else ''}
                     ]
                     aNewData;
+                sColumns: "Scheda,Idutente,Uid"
                 oLanguage:
                     sInfoEmpty: "0 record trovati"
-                    sInfoFiltered: "(filtrati su un totale di _MAX_)"
+                    sInfoFiltered: ""
                     sInfo: "Visualizzi da _START_ a _END_ di _TOTAL_ totali"
                     sSearch: "Global search: "
                     sLengthMenu: "Mostra _MENU_ risultati"
@@ -88,7 +87,7 @@ modulejs.define 'ViewAccounts', [
                 aaSorting: [[2, 'asc']]
                 sDom: "<'row-fluid' <'widget-header' <'span4'l> <'span8'<'table-tool-wrapper'><'table-tool-container'>> > > rti <'row-fluid' <'widget-footer' <'span6' <'table-action-wrapper'>> <'span6'p> >>"
                 fnDrawCallback: (oSettings) ->
-                    self.renderInMap(oSettings)
+                    # self.renderInMap(oSettings)
             .columnFilter
                 sPlaceHolder: 'head:after'
             
