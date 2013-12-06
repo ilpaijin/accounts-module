@@ -144,6 +144,13 @@
     });
   });
 
+  modulejs.define('CollectionUtenti', ['Q', 'Backbone', 'ModelAccounts'], function(Q, Backbone, ModelAccounts) {
+    var CollectionAccounts;
+    return CollectionAccounts = Backbone.Collection.extend({
+      model: ModelAccounts
+    });
+  });
+
   modulejs.define('ViewPartialsFactory', ['Q', 'jquery', 'Backbone'], function(Q, $, Backbone) {
     var ViewPartialsFactory;
     return ViewPartialsFactory = Backbone.View.extend({
@@ -1541,10 +1548,11 @@
     var ViewAccounts;
     return ViewAccounts = Backbone.View.extend({
       events: {
-        'click .aprischeda': 'openAccountTabScheda'
+        'click .aprischeda': 'openAccountTabScheda',
+        'submit #formlistautenti': 'drawDataTable'
       },
       initialize: function() {
-        _.bindAll(this, 'render', 'addMapButton', 'mapView', 'renderInMap');
+        _.bindAll(this, 'render');
         this.renderDataTable();
         this.TabMenu = new ViewTabMenuSchede({
           collection: this.collection
@@ -1557,18 +1565,30 @@
       renderDataTable: function() {
         var self;
         self = this;
-        this.OdataTable = $(this.el).dataTable({
+        return this.OdataTable = $(this.el).find('#lista-utenti').dataTable({
           aLengthMenu: [[20, 50, 100, -1], [20, 50, 100, "All"]],
           iDisplayLength: 20,
           bProcessing: true,
           bServerSide: true,
           sAjaxSource: "/qoffice/api/accounts/dataTable/utenti",
+          fnServerData: function(sSource, aoData, fnCallback, oSettings) {
+            aoData.push({
+              "name": "utente",
+              "value": $(self.el).find('input[name=utente]').val()
+            });
+            aoData.push({
+              "name": "padre",
+              "value": $(self.el).find('input[name=padre]').val()
+            });
+            return $.getJSON(sSource, aoData, function(json) {
+              self.validateForm(self.el, json);
+              self.collection.add(json.aaData);
+              return fnCallback(json);
+            });
+          },
           bDeferRender: false,
           bRetrieve: true,
           bIgnoreEmpty: false,
-          oColumnFilterWidgets: {
-            "aiExclude": [1]
-          },
           aoColumns: (function() {
             var aNewData;
             aNewData = [
@@ -1578,7 +1598,7 @@
                   reg = '';
                   menuaddition = '';
                   if (!data.accounts) {
-                    reg = "<span class='fontello-icon-attention' style='padding-left:5px;'>isol</span>";
+                    reg = "<span class='fontello-icon-attention' style='padding-left:5px;'></span>";
                   }
                   if (Q.paths.realm === "developer" || Q.paths.realm === 'amministrazione') {
                     if (data.accounts) {
@@ -1667,7 +1687,6 @@
             ];
             return aNewData;
           })(),
-          sColumns: "Scheda,Idutente,Uid",
           oLanguage: {
             sInfoEmpty: "0 record trovati",
             sInfoFiltered: "",
@@ -1678,34 +1697,42 @@
           },
           bSortCellsTop: true,
           aaSorting: [[2, 'asc']],
-          sDom: "<'row-fluid' <'widget-header' <'span4'l> <'span8'<'table-tool-wrapper'><'table-tool-container'>> > > rti <'row-fluid' <'widget-footer' <'span6' <'table-action-wrapper'>> <'span6'p> >>",
-          fnDrawCallback: function(oSettings) {}
-        }).columnFilter({
-          sPlaceHolder: 'head:after'
+          sDom: "<'row-fluid' <'widget-header' <'span4'l> <'span8'<'table-tool-wrapper'><'table-tool-container'>> > > rti <'row-fluid' <'widget-footer' <'span6' <'table-action-wrapper'>> <'span6'p> >>"
         });
-        return this.addMapButton();
-      },
-      renderInMap: function(oSettings) {
-        var i, model, _i, _len, _ref;
-        if (this.OdataTable) {
-          this.collection.forEach(function(model, index) {
-            model.set('visibleInMaps', false);
-          });
-          _ref = oSettings.aiDisplay;
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            i = _ref[_i];
-            model = this.OdataTable.fnGetData(i);
-            model = this.collection.get(model.uid);
-            model.set({
-              'visibleInMaps': true
-            });
-          }
-          this.mapView();
-        }
       },
       updateDataTable: function() {
         this.OdataTable.fnSettings().aaData = this.collection.toJSON();
         this.OdataTable.fnReloadAjax(this.OdataTable.fnSettings());
+      },
+      drawDataTable: function(e) {
+        e.preventDefault();
+        this.validateForm(e.currentTarget);
+        return this.OdataTable.fnDraw();
+      },
+      validateForm: function(el, json) {
+        var input, inputs, _i, _len, _results;
+        if (json == null) {
+          json = false;
+        }
+        inputs = $(el).find('input[type="text"]');
+        _results = [];
+        for (_i = 0, _len = inputs.length; _i < _len; _i++) {
+          input = inputs[_i];
+          $(input).parents('div').next('.label').text('');
+          if (input.value.length > 0 && input.value.length < 4) {
+            $(input).parents('div').next('.label').text('FILTRO NON PROCESSATO: ricerca inferiore a 4 caratteri');
+          }
+          if (json) {
+            if (input.value.length > 0 && !json.query[input.name]) {
+              _results.push($(input).parents('div').next('.label').text('FILTRO NON PROCESSATO: nessun valore trovato'));
+            } else {
+              _results.push(void 0);
+            }
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
       },
       openAccountTabScheda: function(e, tab) {
         var el, id, instance;
@@ -1728,73 +1755,40 @@
             tabActive: tab
           })
         };
-      },
-      addMapButton: function() {
-        var self;
-        self = this;
-        $('#lista-' + Q.paths.currentpage + '_wrapper .table-action-wrapper').html('<a href="#tabMappa" data-toggle="tab" class="btn aprilistainmappa"><i class="fontello-icon-map"></i>Apri nella mappa</a>').find('.aprilistainmappa').on('click', function(e) {
-          $($(this).attr('href')).fadeIn();
-          self.mapView();
-          return $('body').delegate('.apri-scheda-da-mappa', 'click', function(e) {
-            e.preventDefault();
-            return self.openAccountTabScheda(e);
-          });
-        });
-      },
-      mapView: function() {
-        var a, dataset, el, imagemarker, map, mapOptions, marker, _i, _len;
-        el = document.getElementById("map-canvas-" + Q.paths.currentpage);
-        mapOptions = {
-          center: new google.maps.LatLng(41.871, 12.567),
-          zoom: 6,
-          mapTypeId: google.maps.MapTypeId.ROADMAP
-        };
-        map = new google.maps.Map(el, mapOptions);
-        dataset = this.collection.filter(function(i) {
-          return i.get('visibleInMaps') === true && i.get('latlng').idref !== '';
-        });
-        $('.mappa-accounts-valid span').html(dataset.length);
-        for (_i = 0, _len = dataset.length; _i < _len; _i++) {
-          a = dataset[_i];
-          if ('' !== a.get('latlng').idref) {
-            imagemarker = a.get('accounts').qshop === 'si' ? 'qshop' : Q.paths.currentpage;
-            marker = new google.maps.Marker({
-              position: new google.maps.LatLng(a.get('latlng').lat, a.get('latlng').lng),
-              map: map,
-              icon: Q.paths.assets + 'q-marker-' + imagemarker + '.png',
-              title: a.get('accounts').ragione,
-              clickable: true
-            });
-          }
-          marker.info = new google.maps.InfoWindow({
-            content: '<div><h4>' + a.get('accounts').ragione + '</h4><p><small>Riferimento: </small><strong>' + a.get('nome') + ' ' + a.get('cognome') + '</strong></p><p><small>Master: </small>' + a.get('master') + '</p><p><a href="mailto:' + a.get('email') + '">' + a.get('email') + '</a></p></div>' + '<p><a class="apri-scheda-da-mappa" rel="' + a.get('uid') + '" href="#' + a.get('uid') + '">Apri scheda</a></p>' + '</div>'
-          });
-          google.maps.event.addListener(marker, 'click', function() {
-            return this.info.open(map, this);
-          });
-          marker.setMap(map);
-        }
-        return window.scrollTo(0, ($('#tabMappa').position().top) - 80);
       }
     });
   });
 
-  modulejs.define('initUtenti', ['Q', 'CollectionAccounts', 'ViewUtenti', 'ViewSchedaEdit'], function(Q, CollectionAccounts, ViewUtenti, ViewSchedaEdit) {
-    var Router, router, viewAccounts;
+  modulejs.define('initUtenti', ['Q', 'CollectionUtenti', 'ViewUtenti', 'ViewSchedaEdit'], function(Q, CollectionUtenti, ViewUtenti, ViewSchedaEdit) {
+    var Router, collectionUtenti, router, viewAccounts;
+    collectionUtenti = new CollectionUtenti();
     ViewSchedaEdit.prototype.partials = ['Scheda', 'Isolutions', 'Callcenter', 'Qpoints'];
     viewAccounts = new ViewUtenti({
-      el: '#lista-' + Q.paths.currentpage,
+      collection: collectionUtenti,
+      el: "#accounts-listautenti",
       dataTableColumns: ['uid', 'idutente', 'padre', 'nome', 'cognome', 'comune', 'provincia', 'regione']
     });
     Router = Backbone.Router.extend({
       initialize: function() {
+        this.collection = collectionUtenti;
         this.route(/(.+)/, "schedaAccount");
         this.route(/^tab-(.+)$/, "tabAccount");
         return this;
       },
-      schedaAccount: function(r) {},
+      schedaAccount: function(r) {
+        return this.listenTo(this.collection, {
+          "reset": function() {
+            return viewAccounts.openAccountTabScheda(r);
+          }
+        });
+      },
       tabAccount: function(r) {
-        return r = r.split('-');
+        r = r.split('-');
+        return this.listenTo(this.collection, {
+          "reset": function() {
+            return viewAccounts.openAccountTabScheda(r[1], r[0]);
+          }
+        });
       }
     });
     router = new Router;

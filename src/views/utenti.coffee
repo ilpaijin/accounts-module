@@ -9,13 +9,11 @@ modulejs.define 'ViewUtenti', [
     ViewAccounts = Backbone.View.extend
         events: 
             'click .aprischeda': 'openAccountTabScheda'
+            'submit #formlistautenti': 'drawDataTable'
 
         initialize: ->
-            _.bindAll @, 'render', 'addMapButton', 'mapView', 'renderInMap'
-            # @.listenTo @.collection, "reset" : -> @.renderDataTable()
-
+            _.bindAll @, 'render'
             @.renderDataTable()
-
             @.TabMenu = new ViewTabMenuSchede({collection: @.collection})
 
             return
@@ -26,18 +24,27 @@ modulejs.define 'ViewUtenti', [
 
         renderDataTable: ->
             self = @
-            @.OdataTable = $(@.el).dataTable
+            @.OdataTable = $(@.el).find('#lista-utenti').dataTable
                 aLengthMenu: [[20, 50, 100, -1], [20, 50, 100, "All"]]
                 iDisplayLength: 20
                 bProcessing: true,
                 bServerSide: true,
                 sAjaxSource: "/qoffice/api/accounts/dataTable/utenti"
-                # aaData: @.collection.toJSON()
+                fnServerData: (sSource, aoData, fnCallback, oSettings) ->
+                    aoData.push 
+                        "name": "utente", 
+                        "value": $(self.el).find('input[name=utente]').val()
+                    aoData.push 
+                        "name": "padre", 
+                        "value": $(self.el).find('input[name=padre]').val()    
+                    $.getJSON sSource, aoData, (json) ->
+                        self.validateForm self.el, json
+                        self.collection.add(json.aaData)
+                        fnCallback json
+
                 bDeferRender: false
                 bRetrieve: true
                 bIgnoreEmpty: false
-                oColumnFilterWidgets: 
-                  "aiExclude": [1]
                 aoColumns: do ->
                     aNewData = [
                         {'mData': (data, objs) ->
@@ -45,7 +52,7 @@ modulejs.define 'ViewUtenti', [
                             menuaddition = ''
 
                             if not data.accounts
-                                reg = "<span class='fontello-icon-attention' style='padding-left:5px;'>isol</span>"
+                                reg = "<span class='fontello-icon-attention' style='padding-left:5px;'></span>"
 
                             if Q.paths.realm is "developer" or Q.paths.realm is 'amministrazione'
                                 if data.accounts
@@ -75,7 +82,6 @@ modulejs.define 'ViewUtenti', [
                         {'mData': (data) -> if data.accounts and data.accounts.regione isnt '' then data.accounts.regione else data.regione},
                     ]
                     aNewData;
-                sColumns: "Scheda,Idutente,Uid"
                 oLanguage:
                     sInfoEmpty: "0 record trovati"
                     sInfoFiltered: ""
@@ -86,31 +92,28 @@ modulejs.define 'ViewUtenti', [
                 bSortCellsTop: true
                 aaSorting: [[2, 'asc']]
                 sDom: "<'row-fluid' <'widget-header' <'span4'l> <'span8'<'table-tool-wrapper'><'table-tool-container'>> > > rti <'row-fluid' <'widget-footer' <'span6' <'table-action-wrapper'>> <'span6'p> >>"
-                fnDrawCallback: (oSettings) ->
-                    # self.renderInMap(oSettings)
-            .columnFilter
-                sPlaceHolder: 'head:after'
-            
-            @.addMapButton()
-            
-        renderInMap: (oSettings) ->
-            if @.OdataTable
-                @.collection.forEach (model, index) ->
-                    model.set 'visibleInMaps', false
-                    return
-
-                for i in oSettings.aiDisplay
-                    model = @.OdataTable.fnGetData(i);
-                    model = @.collection.get model.uid
-                    model.set 'visibleInMaps': true
-                
-                @.mapView(); 
-            return
 
         updateDataTable: ->
             @.OdataTable.fnSettings().aaData = @.collection.toJSON()
             @.OdataTable.fnReloadAjax(@.OdataTable.fnSettings())
             return
+
+        drawDataTable: (e)->
+            e.preventDefault()
+            @.validateForm(e.currentTarget)
+            @.OdataTable.fnDraw()
+
+        validateForm: (el, json = false) ->
+            inputs = $(el).find('input[type="text"]')
+
+            for input in inputs
+                $(input).parents('div').next('.label').text('')
+
+                if input.value.length > 0 && input.value.length < 4
+                    $(input).parents('div').next('.label').text('FILTRO NON PROCESSATO: ricerca inferiore a 4 caratteri')
+                if json
+                    if input.value.length > 0 && !json.query[input.name]
+                        $(input).parents('div').next('.label').text('FILTRO NON PROCESSATO: nessun valore trovato')
 
         openAccountTabScheda: (e, tab) ->
             if e.currentTarget 
@@ -120,9 +123,6 @@ modulejs.define 'ViewUtenti', [
                 id = e  # comes as text  
             
             instance = 'tabScheda-' + id
-
-            # console.info instance
-            # console.info Q.Accounts.Instances
 
             if Q.Accounts.Instances[instance]? 
                 Q.Accounts.Instances[instance].view.setActive();
@@ -136,42 +136,3 @@ modulejs.define 'ViewUtenti', [
                     collection: @.collection
                     tabActive: tab
             return  
-
-        addMapButton: ->
-            self = @
-            $('#lista-' + Q.paths.currentpage + '_wrapper .table-action-wrapper').html('<a href="#tabMappa" data-toggle="tab" class="btn aprilistainmappa"><i class="fontello-icon-map"></i>Apri nella mappa</a>').find('.aprilistainmappa').on 'click', (e) ->
-                $($(@).attr('href')).fadeIn()
-                self.mapView()
-                $('body').delegate '.apri-scheda-da-mappa', 'click', (e) ->
-                    e.preventDefault();
-                    self.openAccountTabScheda e
-            return   
-
-        mapView: ->
-            el = document.getElementById("map-canvas-" + Q.paths.currentpage)
-            mapOptions =
-                center: new google.maps.LatLng 41.871, 12.567
-                zoom: 6
-                mapTypeId: google.maps.MapTypeId.ROADMAP
-            map = new google.maps.Map el, mapOptions
-            dataset = @.collection.filter (i) ->
-                i.get('visibleInMaps') is true and i.get('latlng').idref isnt ''
-            $('.mappa-accounts-valid span').html(dataset.length)
-            
-            for a in dataset
-                if '' isnt a.get('latlng').idref
-                    
-                    imagemarker = if a.get('accounts').qshop is 'si' then 'qshop' else Q.paths.currentpage
-
-                    marker = new google.maps.Marker
-                        position: new google.maps.LatLng(a.get('latlng').lat, a.get('latlng').lng)
-                        map: map
-                        icon: Q.paths.assets + 'q-marker-' + imagemarker + '.png'
-                        title: a.get('accounts').ragione
-                        clickable: true
-                marker.info = new google.maps.InfoWindow
-                    content: '<div><h4>' + a.get('accounts').ragione + '</h4><p><small>Riferimento: </small><strong>' + a.get('nome') + ' ' + a.get('cognome') + '</strong></p><p><small>Master: </small>' + a.get('master') + '</p><p><a href="mailto:' + a.get('email') + '">' + a.get('email') + '</a></p></div>' + '<p><a class="apri-scheda-da-mappa" rel="' + a.get('uid') + '" href="#' + a.get('uid') + '">Apri scheda</a></p>' + '</div>'
-                google.maps.event.addListener marker, 'click', ->
-                    @.info.open map, @
-                marker.setMap map
-            window.scrollTo 0, ($('#tabMappa').position().top) - 80

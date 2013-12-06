@@ -1,17 +1,17 @@
 modulejs.define 'initUtenti', [
 	'Q',
-	'CollectionAccounts',
+	'CollectionUtenti',
 	'ViewUtenti', 
 	'ViewSchedaEdit'
 ], 
 (
 	Q,
-	CollectionAccounts,
+	CollectionUtenti,
 	ViewUtenti,
 	ViewSchedaEdit
 ) ->
 
-	# collectionAccounts = new CollectionAccounts()
+	collectionUtenti = new CollectionUtenti()
 
 	ViewSchedaEdit.prototype.partials = [
 		'Scheda'
@@ -25,8 +25,8 @@ modulejs.define 'initUtenti', [
 	]
 
 	viewAccounts = new ViewUtenti
-		# collection: collectionAccounts
-		el: '#lista-'+Q.paths.currentpage
+		collection: collectionUtenti
+		el: "#accounts-listautenti"
 		dataTableColumns: [
 			'uid'
 			'idutente'
@@ -42,23 +42,19 @@ modulejs.define 'initUtenti', [
 
 	Router = Backbone.Router.extend
 		initialize: ->
-			# @.collection = collectionAccounts
+			@.collection = collectionUtenti
 			@.route /(.+)/, "schedaAccount"	
 			@.route /^tab-(.+)$/, "tabAccount"
 			@
 
 		schedaAccount: (r) ->
-			# console.info 'scehda'
-			# console.info r
-			# @.listenTo @.collection, "reset" : -> 
-				# viewAccounts.openAccountTabScheda r	
+			@.listenTo @.collection, "reset" : -> 
+				viewAccounts.openAccountTabScheda r	
 
 		tabAccount: (r) ->
-			# console.info 'tab'
-			# console.info r
 			r = r.split('-') # r[0] = tab, r[1] username
-			# @.listenTo @.collection, "reset" : -> 
-				# viewAccounts.openAccountTabScheda r[1], r[0]		
+			@.listenTo @.collection, "reset" : -> 
+				viewAccounts.openAccountTabScheda r[1], r[0]		
 
 	router = new Router 	
 
