@@ -834,7 +834,7 @@
         return this.init(this.options.active);
       },
       setAjaxUrl: function() {
-        return Q.Accounts.paths.api + 'partial/' + this.options.name + '/' + this.options.model.id + '/' + Q.paths.currentpage;
+        return Q.Accounts.paths.api + 'partial/' + this.options.name + '-' + Q.paths.currentpage + '/' + this.options.model.id + '/' + Q.paths.currentpage;
       },
       render: function() {
         this.$el.html(this.templateTab({
@@ -859,6 +859,9 @@
             if (JSON.parse(response).saved) {
               me.$el.addClass("active in");
               me.modelIsSaved();
+              me.$el.fadeOut(0, function() {
+                return $(this).fadeIn();
+              });
             }
           }
         });
@@ -1864,7 +1867,7 @@
       }
       citiesUl.empty();
       return $.ajax({
-        url: Q.paths.base + 'api/rest/getComune/' + val,
+        url: 'http://' + Q.paths.base + 'api/rest/getComune/' + val,
         beforeSend: function() {
           me.data('active', true);
         },
@@ -1908,7 +1911,7 @@
       istat = target.attr('data-istat');
       prov = target.attr('data-prov');
       $.ajax({
-        url: Q.paths.base + 'api/rest/getfulllocations/' + target.text() + '/' + prov + '/' + istat,
+        url: 'http://' + Q.paths.base + 'api/rest/getfulllocations/' + target.text() + '/' + prov + '/' + istat,
         success: function(data) {
           var holder;
           data = JSON.parse(data);

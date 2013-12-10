@@ -48,14 +48,10 @@ modulejs.define 'initAccounts', [
 			@
 
 		schedaAccount: (r) ->
-			# console.info 'scehda'
-			# console.info r
 			@.listenTo @.collection, "reset" : -> 
 				viewAccounts.openAccountTabScheda r	
 
 		tabAccount: (r) ->
-			# console.info 'tab'
-			# console.info r
 			r = r.split('-') # r[0] = tab, r[1] username
 			@.listenTo @.collection, "reset" : -> 
 				viewAccounts.openAccountTabScheda r[1], r[0]		

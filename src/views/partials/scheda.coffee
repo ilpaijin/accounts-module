@@ -13,7 +13,7 @@ modulejs.define 'ViewPartialsScheda', [
 			@.init(@.options.active)
 
 		setAjaxUrl: -> 
-			Q.Accounts.paths.api + 'partial/'+@.options.name + '/'+@.options.model.id+'/'+Q.paths.currentpage
+			Q.Accounts.paths.api + 'partial/'+@.options.name+'-'+Q.paths.currentpage+'/'+@.options.model.id+'/'+Q.paths.currentpage
 
 		render: ->
 			@.$el.html @.templateTab 
@@ -40,9 +40,9 @@ modulejs.define 'ViewPartialsScheda', [
 					if JSON.parse(response).saved
 						me.$el.addClass "active in"
 						me.modelIsSaved()
+						me.$el.fadeOut 0, () ->
+							$(this).fadeIn()
 					return	
-
-					# me.$el.addClass('active in')  
 			return	
 
 		showMap: ->

@@ -17,7 +17,7 @@ $ ->
 		citiesUl.empty()
 
 		$.ajax
-			url: Q.paths.base+'api/rest/getComune/'+val
+			url: 'http://'+Q.paths.base+'api/rest/getComune/'+val
 			beforeSend: ->
 				me.data('active', true)
 				return
@@ -63,7 +63,7 @@ $ ->
 		prov = target.attr('data-prov')
 
 		$.ajax
-			url: Q.paths.base+'api/rest/getfulllocations/'+target.text()+'/'+prov+'/'+istat
+			url: 'http://'+Q.paths.base+'api/rest/getfulllocations/'+target.text()+'/'+prov+'/'+istat
 			success: (data) ->
 				data = JSON.parse(data)
 				holder = $('.autocomplete-location')
